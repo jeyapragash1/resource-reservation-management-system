@@ -1,0 +1,38 @@
+name: Checks
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: reservation
+          POSTGRES_PASSWORD: reservation
+          POSTGRES_DB: reservations_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U reservation -d reservations_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://reservation:reservation@localhost:5432/reservations_test
+      TEST_DATABASE_URL: postgresql://reservation:reservation@localhost:5432/reservations_test
+      APP_URL: http://127.0.0.1:3000
+      SEED_PASSWORD: ci-only-demo-password
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run build
+      - run: npx playwright install --with-deps chrome
+      - run: npm run test:e2e

@@ -1,7 +1,7 @@
 import nextEnv from "@next/env";
 import { Pool } from "pg";
 import { z } from "zod";
-import { hashPassword } from "../src/lib/password";
+import { hashPassword } from "../../src/backend/lib/password";
 nextEnv.loadEnvConfig(process.cwd());
 const [name, email, role = "member"] = process.argv.slice(2);
 const result = z

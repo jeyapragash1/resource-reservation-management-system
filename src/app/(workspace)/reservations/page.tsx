@@ -1,6 +1,6 @@
-import { Workspace } from "@/components/workspace";
-import { requirePageUser } from "@/lib/auth";
-import { idSchema } from "@/lib/validation";
+import { Workspace } from "@/frontend/components/workspace";
+import { requirePageUser } from "@/backend/lib/auth";
+import { idSchema } from "@/backend/lib/validation";
 export default async function Reservations({
   searchParams,
 }: {

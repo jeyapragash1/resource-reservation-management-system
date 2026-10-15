@@ -1,19 +1,21 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/client";
+import { api } from "@/frontend/lib/client";
 import {
   categories,
   type Resource,
   type Reservation,
   type User,
-} from "@/lib/types";
-import { fromLocalInput, toLocalInput } from "@/lib/time";
+} from "@/shared/types";
+import { fromLocalInput, toLocalInput } from "@/shared/time";
 import { ReservationForm } from "./reservation-form";
 import { ResourceForm } from "./resource-form";
 import { Dialog } from "./dialog";
 import { ResourceCard } from "./resource-card";
 import { ReservationTable } from "./reservation-table";
+import { Icon } from "./icon";
+import { resourceImage } from "@/frontend/lib/resource-image";
 type View = "overview" | "resources" | "reservations";
 type BookingPage = { items: Reservation[]; total: number; page: number };
 type Overview = {
@@ -29,10 +31,12 @@ export function Workspace({
   view,
   user,
   initialResource = "",
+  management = false,
 }: {
   view: View;
   user: User;
   initialResource?: string;
+  management?: boolean;
 }) {
   const [resources, setResources] = useState<Resource[]>([]),
     [bookings, setBookings] = useState<BookingPage>({
@@ -166,16 +170,18 @@ export function Workspace({
   );
   const titles = {
     overview: [
-      "Your workspace, at a glance",
-      "See what’s booked and plan what’s next.",
+      "Dashboard",
+      "Overview of resource usage and upcoming reservations.",
     ],
     resources: [
-      "Find your next resource",
-      "Rooms, workspaces, and equipment for the way your team works.",
+      management ? "Manage Resources" : "Resources",
+      management
+        ? "Add, edit, or archive resources."
+        : "Browse and book available facilities and resources.",
     ],
     reservations: [
-      "A clear view of the schedule",
-      "Manage upcoming bookings and keep track of past activity.",
+      "My Reservations",
+      "View and manage your reservations and the shared schedule.",
     ],
   };
   return (
@@ -193,18 +199,20 @@ export function Workspace({
         <div className="heading-actions">
           {view === "resources" && user.role === "admin" && (
             <button
-              className="secondary"
+              className="primary"
               onClick={() => setEditor({ kind: "resource" })}
             >
               Add resource
             </button>
           )}
-          <button
-            onClick={() => setEditor({ kind: "booking" })}
-            disabled={loading || activeResources.length === 0}
-          >
-            + New reservation
-          </button>
+          {!management && (
+            <button
+              onClick={() => setEditor({ kind: "booking" })}
+              disabled={loading || activeResources.length === 0}
+            >
+              + New reservation
+            </button>
+          )}
         </div>
       </div>
       {message && (
@@ -239,8 +247,15 @@ export function Workspace({
                 overview?.mine,
                 "Including in-progress bookings",
               ],
-            ].map(([label, value, hint]) => (
+            ].map(([label, value, hint], index) => (
               <div className="stat" key={label}>
+                <div className="stat-icon">
+                  <Icon
+                    name={
+                      ["resources", "calendar", "reservations", "home"][index]
+                    }
+                  />
+                </div>
                 <span>{label}</span>
                 <strong>{loading ? "—" : (value ?? "—")}</strong>
                 <small>{hint}</small>
@@ -262,46 +277,48 @@ export function Workspace({
       )}
       {view === "resources" && (
         <>
-          <form className="availability" onSubmit={checkAvailability}>
-            <div>
-              <h2>Check availability</h2>
-              <p className="small muted">Find a free slot · Sri Lanka time</p>
-            </div>
-            <label>
-              From
-              <input
-                type="datetime-local"
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Until
-              <input
-                type="datetime-local"
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-                required
-              />
-            </label>
-            <button type="submit" className="secondary" disabled={loading}>
-              Check
-            </button>
-            {availability && (
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => {
-                  setAvailability("");
-                  setStart("");
-                  setEnd("");
-                }}
-              >
-                Clear
+          {!management && (
+            <form className="availability" onSubmit={checkAvailability}>
+              <div>
+                <h2>Check availability</h2>
+                <p className="small muted">Find a free slot · Sri Lanka time</p>
+              </div>
+              <label>
+                From
+                <input
+                  type="datetime-local"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Until
+                <input
+                  type="datetime-local"
+                  value={end}
+                  onChange={(e) => setEnd(e.target.value)}
+                  required
+                />
+              </label>
+              <button type="submit" className="secondary" disabled={loading}>
+                Check
               </button>
-            )}
-          </form>
+              {availability && (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => {
+                    setAvailability("");
+                    setStart("");
+                    setEnd("");
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </form>
+          )}
           <div className="resource-toolbar">
             <label className="search-label">
               <span className="sr-only">Search resources</span>
@@ -345,6 +362,79 @@ export function Workspace({
             <p className="empty" role="status">
               Loading resources…
             </p>
+          ) : management ? (
+            <div className="management-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Location</th>
+                    <th>Capacity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((resource) => (
+                    <tr key={resource.id}>
+                      <td>
+                        <div className="management-name">
+                          <span
+                            className="management-photo"
+                            style={{
+                              backgroundImage: `url(${resourceImage(resource)})`,
+                            }}
+                          />
+                          <strong>{resource.name}</strong>
+                        </div>
+                      </td>
+                      <td>{resource.category}</td>
+                      <td>{resource.location}</td>
+                      <td>{resource.capacity}</td>
+                      <td>
+                        <span
+                          className={`badge ${resource.archived_at ? "neutral" : resource.available ? "green" : "amber"}`}
+                        >
+                          {resource.archived_at
+                            ? "Archived"
+                            : resource.available
+                              ? "Available"
+                              : "In use"}
+                        </span>
+                      </td>
+                      <td>
+                        {!resource.archived_at && (
+                          <div className="row-actions">
+                            <button
+                              className="text-button"
+                              onClick={() =>
+                                setEditor({ kind: "resource", resource })
+                              }
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="text-button danger"
+                              onClick={() => {
+                                setConfirmError("");
+                                setConfirm({
+                                  kind: "archive",
+                                  id: resource.id,
+                                  name: resource.name,
+                                });
+                              }}
+                            >
+                              Archive
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="resource-grid">
               {filtered.map((resource) => (
@@ -454,6 +544,7 @@ export function Workspace({
               </div>
             ) : (
               <ReservationTable
+                list={view === "reservations"}
                 bookings={bookings.items}
                 user={user}
                 now={now}
@@ -471,11 +562,9 @@ export function Workspace({
               />
             )}
           </div>
-          <div className="pagination">
-            <span>
-              {bookings.total} reservations · Times in Sri Lanka (UTC+05:30)
-            </span>
-            {view === "reservations" && (
+          {view === "reservations" && (
+            <div className="pagination">
+              <span>{bookings.total} reservations</span>
               <div>
                 <button
                   className="secondary"
@@ -493,8 +582,8 @@ export function Workspace({
                   Next
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
       {editor?.kind === "booking" && (

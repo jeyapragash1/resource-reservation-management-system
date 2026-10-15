@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
-import { pool } from "@/lib/db";
-import { errorResponse } from "@/lib/http";
+import { requireUser } from "@/backend/lib/auth";
+import { pool } from "@/backend/lib/db";
+import { errorResponse } from "@/backend/lib/http";
 export async function GET() {
   try {
     const user = await requireUser();

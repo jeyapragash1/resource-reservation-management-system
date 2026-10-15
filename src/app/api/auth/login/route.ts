@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db";
-import { loginSchema } from "@/lib/validation";
-import { hashPassword, verifyPassword } from "@/lib/password";
-import { createSession } from "@/lib/auth";
-import { body, checkOrigin, errorResponse, HttpError } from "@/lib/http";
+import { pool } from "@/backend/lib/db";
+import { loginSchema } from "@/backend/lib/validation";
+import { hashPassword, verifyPassword } from "@/backend/lib/password";
+import { createSession } from "@/backend/lib/auth";
+import {
+  body,
+  checkOrigin,
+  errorResponse,
+  HttpError,
+} from "@/backend/lib/http";
 const dummyHash = hashPassword("invalid-account-password");
 export async function POST(request: Request) {
   try {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "../frontend/styles/globals.css";
 export const metadata: Metadata = {
-  title: "Reserve · Resource reservations",
+  title: "PrimeWave Lab · Resource reservations",
   description: "Shared resources and reservations in one place.",
 };
 export default function RootLayout({

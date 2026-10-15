@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/client";
+import { api } from "@/frontend/lib/client";
+import { Icon } from "./icon";
 export function LoginForm() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(""),
     [pending, setPending] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -29,9 +31,8 @@ export function LoginForm() {
   }
   return (
     <div className="login-form">
-      <p className="eyebrow">Welcome back</p>
-      <h2>Sign in to Reserve</h2>
-      <p className="muted">Use your organization account to continue.</p>
+      <h2>Welcome back</h2>
+      <p className="muted">Sign in to your account to continue</p>
       <form onSubmit={submit}>
         <label>
           Email address
@@ -46,13 +47,23 @@ export function LoginForm() {
         </label>
         <label>
           Password
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            maxLength={256}
-          />
+          <span className="password-field">
+            <input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              maxLength={256}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              <Icon name="eye" />
+            </button>
+          </span>
         </label>
         {error && (
           <p className="notice error" role="alert">
@@ -64,7 +75,7 @@ export function LoginForm() {
         </button>
       </form>
       <p className="small muted">
-        Need access? Contact your resource administrator.
+        Don’t have an account? Contact your administrator.
       </p>
     </div>
   );

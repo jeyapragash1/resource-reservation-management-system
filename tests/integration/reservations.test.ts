@@ -2,7 +2,7 @@ import { beforeAll, afterAll, beforeEach, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { Pool } from "pg";
-import type { User } from "../../src/lib/types";
+import type { User } from "../../src/shared/types";
 const url = process.env.TEST_DATABASE_URL;
 if (!url)
   throw new Error(
@@ -10,8 +10,8 @@ if (!url)
   );
 const adminPool = new Pool({ connectionString: url });
 const schema = `test_${randomUUID().replaceAll("-", "")}`;
-let db: typeof import("../../src/lib/db");
-let service: typeof import("../../src/lib/reservations");
+let db: typeof import("../../src/backend/lib/db");
+let service: typeof import("../../src/backend/lib/reservations");
 let member: User, other: User, admin: User, resourceId: string;
 const starts = new Date(Date.now() + 86400000).toISOString();
 const ends = new Date(Date.now() + 90000000).toISOString();
@@ -28,9 +28,11 @@ beforeAll(async () => {
   const connection = new URL(url!);
   connection.searchParams.set("options", `-csearch_path=${schema},public`);
   process.env.DATABASE_URL = connection.toString();
-  db = await import("../../src/lib/db");
-  service = await import("../../src/lib/reservations");
-  await db.pool.query(await readFile("db/migrations/001_initial.sql", "utf8"));
+  db = await import("../../src/backend/lib/db");
+  service = await import("../../src/backend/lib/reservations");
+  await db.pool.query(
+    await readFile("database/migrations/001_initial.sql", "utf8"),
+  );
   const users = await db.pool
     .query(`INSERT INTO users(name,email,password_hash,role) VALUES
     ('Sam','sam@example.com','unused','member'),('Jo','jo@example.com','unused','member'),('Alex','alex@example.com','unused','admin') RETURNING id,name,email,role`);

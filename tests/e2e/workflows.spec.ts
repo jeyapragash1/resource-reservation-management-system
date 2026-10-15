@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { fromLocalInput, toLocalInput } from "../../src/lib/time";
+import { fromLocalInput, toLocalInput } from "../../src/shared/time";
 const origin = "http://127.0.0.1:3100";
 async function signIn(page: Page, role: "admin" | "member") {
   await page.goto("/login");
@@ -12,9 +12,7 @@ async function signIn(page: Page, role: "admin" | "member") {
   );
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   expect((await response).status()).toBe(200);
-  await expect(
-    page.getByRole("heading", { name: "Your workspace, at a glance" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 }
 test("admin creates a resource, books it, edits it, cancels it, and archives it", async ({
   page,
@@ -42,6 +40,7 @@ test("admin creates a resource, books it, edits it, cancels it, and archives it"
   await dialog.getByLabel("Start time", { exact: true }).fill(start);
   await dialog.getByLabel("End time", { exact: true }).fill(end);
   await dialog.getByLabel("People / units").fill("4");
+  await dialog.getByRole("button", { name: "Review reservation" }).click();
   await dialog.getByRole("button", { name: "Confirm reservation" }).click();
   await expect(dialog).not.toBeVisible();
   await card.getByRole("link", { name: "Schedule" }).click();
@@ -78,7 +77,7 @@ test("admin creates a resource, books it, edits it, cancels it, and archives it"
   await expect(card).toContainText("Archived");
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(
-    page.getByRole("heading", { name: "Sign in to Reserve" }),
+    page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
 });
 test("API protects permissions, CSRF, booking conflicts, capacity, and archiving", async ({
@@ -264,9 +263,7 @@ test("mobile resources and sign-in errors remain usable", async ({ page }) => {
     .fill(process.env.SEED_PASSWORD!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("link", { name: "Resources", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Find your next resource" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Add resource", exact: true }),
   ).toHaveCount(0);
@@ -299,8 +296,144 @@ test("localhost sign-in redirects protected pages without authentication errors"
   );
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   expect((await response).status()).toBe(200);
-  await expect(
-    page.getByRole("heading", { name: "Your workspace, at a glance" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("calendar, reports, resource management and redesigned screens work", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.screenshot({ path: "test-results/ui-login.png", fullPage: true });
+  await page.getByLabel("Password", { exact: true }).fill("example-password");
+  await page.getByRole("button", { name: "Show password" }).click();
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+    "type",
+    "text",
+  );
+  await signIn(page, "admin");
+  await expect(page.locator(".stat strong").first()).toHaveText(/\d+/);
+  await page.screenshot({
+    path: "test-results/ui-dashboard.png",
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "Resources", exact: true }).click();
+  await expect(page.locator(".resource-photo").first()).toBeVisible();
+  await page.screenshot({
+    path: "test-results/ui-resources.png",
+    fullPage: true,
+  });
+  await page
+    .locator("article")
+    .first()
+    .getByRole("button", { name: "Reserve", exact: true })
+    .click();
+  await page.screenshot({
+    path: "test-results/ui-booking.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("dialog")
+    .getByLabel("Reservation title")
+    .fill("Project planning meeting");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Review reservation" })
+    .click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Project planning meeting",
+  );
+  await page.screenshot({
+    path: "test-results/ui-confirmation.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Close dialog", exact: true })
+    .click();
+  const created = await page.request.post("/api/reservations", {
+    headers: { origin },
+    data: {
+      resource_id: (await (await page.request.get("/api/resources")).json())[0]
+        .id,
+      title: `Calendar check ${Date.now()}`,
+      notes: "UI verification",
+      attendees: 1,
+      starts_at: new Date(Date.now() + 48 * 3600000).toISOString(),
+      ends_at: new Date(Date.now() + 49 * 3600000).toISOString(),
+    },
+  });
+  expect(created.status()).toBe(201);
+  const booking = await created.json();
+  try {
+    const month = toLocalInput(booking.starts_at).slice(0, 7);
+    const monthResponse = await page.request.get(
+      `/api/reservations?status=upcoming&month=${month}&resource=${booking.resource_id}`,
+    );
+    expect(monthResponse.status()).toBe(200);
+    expect(
+      (await monthResponse.json()).items.some(
+        (item: { id: string }) => item.id === booking.id,
+      ),
+    ).toBe(true);
+    expect(
+      (await page.request.get("/api/reservations?month=2026-13")).status(),
+    ).toBe(400);
+    await page.getByRole("link", { name: "Calendar", exact: true }).click();
+    await expect(
+      page.getByRole("button").filter({ hasText: booking.title }),
+    ).toBeVisible();
+    await page.getByRole("button").filter({ hasText: booking.title }).click();
+    await expect(page.getByRole("dialog")).toContainText("UI verification");
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Close dialog" })
+      .click();
+    await page.screenshot({
+      path: "test-results/ui-calendar.png",
+      fullPage: true,
+    });
+    await page.getByRole("link", { name: "Reports", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Bookings by resource" }),
+    ).toBeVisible();
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export CSV" }).click();
+    expect((await download).suggestedFilename()).toMatch(
+      /^reservations-\d{4}-\d{2}\.csv$/,
+    );
+    await page
+      .getByRole("link", { name: "Manage Resources", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Manage Resources" }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".management-table tbody tr").first(),
+    ).toBeVisible();
+    await page.screenshot({
+      path: "test-results/ui-management.png",
+      fullPage: true,
+    });
+    await page.getByRole("link", { name: "Settings", exact: true }).click();
+    await expect(page.locator(".settings-panel")).toContainText(
+      "admin@example.com",
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/calendar");
+    await expect(page.locator(".calendar-grid")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: "test-results/ui-mobile.png",
+      fullPage: true,
+    });
+  } finally {
+    await page.request.delete(`/api/reservations/${booking.id}`, {
+      headers: { origin },
+    });
+  }
 });

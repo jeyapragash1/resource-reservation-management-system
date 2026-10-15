@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { checkOrigin } from "../../src/lib/http";
+import { checkOrigin } from "../../src/backend/lib/http";
 
 afterEach(() => vi.unstubAllEnvs());
 

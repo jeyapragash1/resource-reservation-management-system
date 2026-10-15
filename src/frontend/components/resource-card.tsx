@@ -1,11 +1,7 @@
 import Link from "next/link";
-import type { Resource } from "@/lib/types";
-const symbols = {
-  "Meeting room": "▦",
-  Workspace: "▤",
-  Equipment: "◈",
-  Vehicle: "▱",
-};
+import type { Resource } from "@/shared/types";
+import { resourceImage } from "@/frontend/lib/resource-image";
+import { Icon } from "./icon";
 export function ResourceCard({
   resource,
   admin,
@@ -33,15 +29,21 @@ export function ResourceCard({
     <article
       className={`resource-card ${resource.archived_at ? "archived" : ""}`}
     >
+      <div
+        className="resource-photo"
+        style={{ backgroundImage: `url(${resourceImage(resource)})` }}
+        role="img"
+        aria-label={`${resource.category} example photograph`}
+      />
       <div className="resource-top">
-        <span className="resource-symbol" aria-hidden="true">
-          {symbols[resource.category]}
-        </span>
         <span className={`badge ${color}`}>{status}</span>
       </div>
       <p className="eyebrow">{resource.category}</p>
       <h2>{resource.name}</h2>
-      <p className="location">{resource.location}</p>
+      <p className="location">
+        <Icon name="pin" />
+        {resource.location}
+      </p>
       <p className="resource-description">
         {resource.description || "No additional details."}
       </p>

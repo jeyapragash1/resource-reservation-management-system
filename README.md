@@ -13,7 +13,7 @@ npm ci
 docker compose up -d db
 ```
 
-Copy `.env.example` to `.env.local`. Set `SEED_PASSWORD` to a password of at least 12 characters. The example `DATABASE_URL` matches the Compose database; change it if using an existing PostgreSQL installation. `APP_URL` must match the browser origin, including the port. By default, use `http://127.0.0.1:3000`, rather than `http://localhost:3000`.
+Copy `.env.example` to `.env.local`. Set `SEED_PASSWORD` to a password of at least 12 characters. The example `DATABASE_URL` matches the Compose database; change it if using an existing PostgreSQL installation. `APP_URL` must match the browser origin, including the port. Local loopback aliases (`localhost` and `127.0.0.1`) are accepted on the same protocol and port.
 
 ```sh
 npm run db:migrate
@@ -21,7 +21,9 @@ npm run db:seed
 npm run dev
 ```
 
-Open **http://127.0.0.1:3000**. Sign in as `admin@example.com` or `member@example.com` using the password you configured. The seed adds five example resources and no fabricated reservation activity. Re-running it does not overwrite existing accounts, change passwords, or delete data.
+Open **http://127.0.0.1:3000**. Sign in as `admin@example.com` or `member@example.com` using the password you configured. The seed adds 12 example users, 12 resources, and 16 sample reservations covering upcoming, past, and cancelled bookings. Sample reservations are identified in their notes. New seeded accounts use `SEED_PASSWORD`; existing passwords are preserved. Re-running the seed does not duplicate its reservations or delete existing data. If a sample slot conflicts with an existing booking, the seed chooses another day.
+
+The seed also adds 12 expired session fixtures and inactive login-attempt rows. These do not grant access or start a login lockout; normal authentication cleans up expired sessions. Migration history records only real migrations and is not filled with sample rows.
 
 The migration account needs permission to create the `btree_gist` extension. On managed PostgreSQL, provision this extension first if the application account cannot create it. Use a separate limited database account for the application in a hosted environment.
 
@@ -52,12 +54,20 @@ To provision another account, set `CREATE_USER_PASSWORD` (at least 12 characters
 
 | Path | Purpose |
 | --- | --- |
-| `src/app` | App Router pages and authenticated JSON route handlers |
-| `src/components` | Workspace screens, forms, and dialogs |
-| `src/lib` | Validation, session authentication, database transactions, reservation rules, and time conversion |
-| `db/migrations` | Ordered SQL migrations, including constraints and indexes |
-| `scripts` | Migration and local seed commands |
+| `src/app` | Next.js pages, layouts, API routes, and favicon |
+| `src/frontend/components` | Workspace UI, forms, dialogs, and live clock |
+| `src/frontend/lib` | Browser API client and resource image selection |
+| `src/frontend/styles` | Application styles |
+| `src/backend/lib` | Validation, session authentication, database transactions, and reservation rules |
+| `src/shared` | Common types and Sri Lanka time conversion |
+| `database/migrations` | Ordered SQL migrations, including constraints and indexes |
+| `scripts/db` | Migration, seed, and account provisioning commands |
+| `scripts/record-demo.ts` | Demonstration recording tool |
+| `public/images` | Bundled resource photographs |
 | `tests` | Unit, PostgreSQL integration, and browser workflow tests |
+| `docs` | Assessment recording, ER diagram, verification, and submission guidance |
+
+This is one Next.js application. Framework routes live directly in `src/app`; frontend helpers and backend services are separated under `src`. All npm commands run from the repository root.
 
 SQL queries use bound parameters. Validation runs at request boundaries; database constraints provide a second layer for data integrity. Cancellation and resource archiving retain records rather than deleting them. Reservation lists use 20-row pages and resource/status/ownership filters. The workspace refreshes once per minute and after writes.
 
@@ -98,3 +108,9 @@ Browser tests use installed Google Chrome. If needed, run `npx playwright instal
 - [Submission checklist](docs/submission-checklist.md), including the official form and deadline.
 
 The included video can be downloaded and uploaded to a shareable location. You can also use the outline to record a narrated walkthrough. Share the ER diagram's GitHub page after pushing these files, and verify that the repository, video, and diagram links are accessible to the review team before submitting the form.
+
+## Workspace views
+
+The dashboard shows live usage totals and upcoming bookings. Resources use bundled category photographs; the photographs are illustrative, not images of the actual facilities. Calendar shows reservations in Sri Lanka time, including bookings spanning multiple days. Monthly reports summarize reservations starting in the selected month and export CSV. Administrators can use Manage Resources for the catalog table. Settings displays account details and the organization?s booking policy. New reservations include a review step before confirmation.
+
+Photo sources are listed in [docs/image-sources.md](docs/image-sources.md).

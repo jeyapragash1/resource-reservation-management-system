@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
-import { transaction } from "@/lib/db";
-import { idSchema, resourceSchema } from "@/lib/validation";
-import { body, checkOrigin, errorResponse, HttpError } from "@/lib/http";
+import { requireUser } from "@/backend/lib/auth";
+import { transaction } from "@/backend/lib/db";
+import { idSchema, resourceSchema } from "@/backend/lib/validation";
+import {
+  body,
+  checkOrigin,
+  errorResponse,
+  HttpError,
+} from "@/backend/lib/http";
 type Context = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, context: Context) {
   try {

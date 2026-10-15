@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
-import { pool } from "@/lib/db";
-import { availabilitySchema, resourceSchema } from "@/lib/validation";
-import { body, checkOrigin, errorResponse } from "@/lib/http";
+import { requireUser } from "@/backend/lib/auth";
+import { pool } from "@/backend/lib/db";
+import { availabilitySchema, resourceSchema } from "@/backend/lib/validation";
+import { body, checkOrigin, errorResponse } from "@/backend/lib/http";
 export async function GET(request: Request) {
   try {
     await requireUser();

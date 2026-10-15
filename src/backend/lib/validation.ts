@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { categories } from "./types";
+import { categories } from "../../shared/types";
 export const idSchema = z.uuid();
 const text = (max: number) =>
   z.string().trim().min(1, "This field is required.").max(max);

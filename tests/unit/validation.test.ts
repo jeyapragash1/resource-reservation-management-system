@@ -4,8 +4,12 @@ import {
   resourceSchema,
   requireFuture,
   availabilitySchema,
-} from "../../src/lib/validation";
-import { fromLocalInput, toLocalInput, formatDate } from "../../src/lib/time";
+} from "../../src/backend/lib/validation";
+import {
+  fromLocalInput,
+  toLocalInput,
+  formatDate,
+} from "../../src/shared/time";
 const booking = {
   resource_id: "06782eca-15e2-4c71-93c0-7446a57376b9",
   title: "Team planning",

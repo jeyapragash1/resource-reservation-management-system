@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { pool } from "./db";
 import { HttpError } from "./http";
-import type { User } from "./types";
+import type { User } from "../../shared/types";
 const cookieName = "reservation_session";
 const digest = (token: string) =>
   createHash("sha256").update(token).digest("hex");

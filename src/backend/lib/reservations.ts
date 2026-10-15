@@ -1,7 +1,7 @@
 import { pool, transaction } from "./db";
 import { HttpError } from "./http";
 import { reservationSchema } from "./validation";
-import type { User } from "./types";
+import type { User } from "../../shared/types";
 import type { z } from "zod";
 type Input = z.infer<typeof reservationSchema>;
 export async function saveReservation(user: User, input: Input, id?: string) {

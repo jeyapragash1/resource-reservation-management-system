@@ -1,7 +1,7 @@
 import { chromium, expect } from "@playwright/test";
 import nextEnv from "@next/env";
 import { mkdir, readFile, rename } from "node:fs/promises";
-import { toLocalInput } from "../src/lib/time";
+import { toLocalInput } from "../src/shared/time";
 nextEnv.loadEnvConfig(process.cwd());
 if (!process.env.SEED_PASSWORD)
   throw new Error("SEED_PASSWORD is required for the local demo account.");
@@ -43,12 +43,10 @@ try {
     .getByLabel("Password", { exact: true })
     .fill(process.env.SEED_PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Your workspace, at a glance" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await scene(
     "Shared resources, one reliable schedule",
-    "Reserve replaces informal booking messages with a shared resource catalog, availability checks, and a reservation history. This recording demonstrates the running local application.",
+    "The system replaces informal booking messages with a shared resource catalog, availability checks, and a reservation history. This recording demonstrates the running local application.",
   );
   await scene(
     "An operational overview",
@@ -99,6 +97,7 @@ try {
   await dialog
     .getByLabel("Notes")
     .fill("Planning session for the product team.");
+  await dialog.getByRole("button", { name: "Review reservation" }).click();
   await dialog.getByRole("button", { name: "Confirm reservation" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(card).toContainText("Reserved");
@@ -108,13 +107,31 @@ try {
   );
   await card.getByRole("button", { name: "Reserve", exact: true }).click();
   await dialog.getByLabel("Reservation title").fill("Conflicting workshop");
+  await dialog.getByRole("button", { name: "Review reservation" }).click();
   await dialog.getByRole("button", { name: "Confirm reservation" }).click();
   await expect(dialog.getByRole("alert")).toContainText("already reserved");
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Close dialog", exact: true })
+    .click();
   await scene(
     "Overlapping reservations are rejected",
     "The second booking was rejected. A PostgreSQL exclusion constraint enforces this rule even when requests arrive simultaneously. Half-open time ranges allow adjacent bookings, such as 09:00–10:00 followed by 10:00–11:00.",
   );
+  await page.getByRole("link", { name: "Calendar", exact: true }).click();
+  await expect(page.locator(".calendar-grid")).toBeVisible();
+  await scene(
+    "A shared resource calendar",
+    "The month calendar shows real reservations in Sri Lanka time, including bookings that span multiple days. Select a booking to inspect its resource, organizer, time, and notes.",
+  );
+  await page.getByRole("link", { name: "Reports", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Bookings by resource" }),
+  ).toBeVisible();
+  await scene(
+    "Monthly usage and export",
+    "Reports summarize bookings starting in the selected month, show resource usage, and export reservation details as CSV. Cancelled bookings remain in the history and are counted separately.",
+  );
+  await page.getByRole("link", { name: "Resources", exact: true }).click();
   await card.getByRole("link", { name: "Schedule" }).click();
   let row = page
     .getByRole("row")
@@ -167,7 +184,7 @@ try {
     "A focused relational model",
     "Users organize reservations and hold expiring sessions. Each reservation belongs to one resource. Foreign keys retain these relationships; cancellation stores the cancelling user. Sessions store token hashes, and passwords use salted scrypt hashes.",
   );
-  const sql = await readFile("db/migrations/001_initial.sql", "utf8");
+  const sql = await readFile("database/migrations/001_initial.sql", "utf8");
   const constraint = sql.slice(
     sql.indexOf("CONSTRAINT reservations_no_overlap"),
     sql.indexOf("CREATE TABLE login_attempts"),

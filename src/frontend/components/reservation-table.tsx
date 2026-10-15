@@ -1,20 +1,23 @@
-import type { Reservation, User } from "@/lib/types";
-import { formatDate, formatTime } from "@/lib/time";
+import type { Reservation, User } from "@/shared/types";
+import { formatDate, formatTime } from "@/shared/time";
+import { resourceImage } from "@/frontend/lib/resource-image";
 export function ReservationTable({
   bookings,
   user,
   now,
   onEdit,
   onCancel,
+  list = false,
 }: {
   bookings: Reservation[];
   user: User;
   now: number;
   onEdit: (reservation: Reservation) => void;
   onCancel: (reservation: Reservation) => void;
+  list?: boolean;
 }) {
   return (
-    <div className="table-scroll">
+    <div className={`table-scroll ${list ? "reservation-list" : ""}`}>
       <table>
         <thead>
           <tr>
@@ -40,7 +43,7 @@ export function ReservationTable({
                   : "Upcoming";
             const color =
               status === "Upcoming"
-                ? "green"
+                ? "blue"
                 : status === "In progress"
                   ? "amber"
                   : "neutral";
@@ -53,6 +56,14 @@ export function ReservationTable({
             return (
               <tr key={booking.id}>
                 <td>
+                  {list && (
+                    <div
+                      className="reservation-thumbnail"
+                      style={{
+                        backgroundImage: `url(${resourceImage({ name: booking.resource_name, resource_category: booking.resource_category })})`,
+                      }}
+                    />
+                  )}
                   <strong>{booking.title}</strong>
                   <span>
                     {booking.resource_name} · {booking.attendees}{" "}

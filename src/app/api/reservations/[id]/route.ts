@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
-import { idSchema, reservationSchema } from "@/lib/validation";
-import { saveReservation, cancelReservation } from "@/lib/reservations";
-import { body, checkOrigin, errorResponse } from "@/lib/http";
+import { requireUser } from "@/backend/lib/auth";
+import { idSchema, reservationSchema } from "@/backend/lib/validation";
+import { saveReservation, cancelReservation } from "@/backend/lib/reservations";
+import { body, checkOrigin, errorResponse } from "@/backend/lib/http";
 type Context = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, context: Context) {
   try {

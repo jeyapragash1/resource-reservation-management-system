@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { categories, type Resource } from "@/lib/types";
-import { api } from "@/lib/client";
+import { categories, type Resource } from "@/shared/types";
+import { api } from "@/frontend/lib/client";
 import { Dialog } from "./dialog";
 export function ResourceForm({
   resource,

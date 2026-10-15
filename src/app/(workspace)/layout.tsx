@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { currentUser } from "@/lib/auth";
-import { Shell } from "@/components/shell";
+import { currentUser } from "@/backend/lib/auth";
+import { Shell } from "@/frontend/components/shell";
 export const dynamic = "force-dynamic";
 export default async function WorkspaceLayout({
   children,

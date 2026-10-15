@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { hashPassword, verifyPassword } from "../../src/lib/password";
+import { hashPassword, verifyPassword } from "../../src/backend/lib/password";
 it("salts passwords and verifies only the correct password", async () => {
   const a = await hashPassword("a-private-password"),
     b = await hashPassword("a-private-password");
